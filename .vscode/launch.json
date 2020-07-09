@@ -1,0 +1,15 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: main.py",
+            "type": "python",
+            "request": "launch",
+            "program": "${fileDirname}//main.py",
+            "console": "integratedTerminal",
+            "args":[
+                "${fileDirname}\\..\\tolset_p86\\exec-while-stmt\\test.bin"
+            ]
+        }
+    ]
+}

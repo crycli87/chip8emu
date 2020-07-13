@@ -22,6 +22,7 @@ class Emulator :
     def __init__(self, rom):
         self._load_rom(rom)
         self._memory = [0x0]*4096
+        self._video_memory = [[0] * 64 for i in range(32)]
         self._registers = [0x0]*0xf # V1,V2 ~ V9,Va,Vb,~ Vf までの16個。原則16進数をindexとしてアクセスする
         self._pc = 0x0
         self._sp = 0x0 # スタックポインタ 8bit
@@ -110,6 +111,15 @@ class Emulator :
     
     def tick(self):
         op = self._get_op()
+        self._exec(op)
 
+    def _get_op(self):
+        op = self._memory[self._pc]
+        op += (self._memory[self._pc+1] << 8)
+        self._pc += 2
+        return op
+
+    def _exec(self,op):
+        self._instructions[op]()
 
 

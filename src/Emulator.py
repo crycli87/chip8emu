@@ -1,7 +1,7 @@
 import threading
 import curses
 
-class Emulator :
+class Environment :
     _fonts =    [0xF0,0x90,0x90,0x90,0xF0,
                  0x20,0x60,0x20,0x20,0x70,
                  0xF0,0x10,0xf0,0x80,0xf0,
@@ -19,32 +19,37 @@ class Emulator :
                  0xf0,0x80,0xf0,0x80,0xf0,
                  0xf0,0x80,0xf0,0x80,0x80]
 
+    def __init__(self) :
+        self.memory = [0x0]*4096
+        self.video_memory = [[0] * 64 for i in range(32)]
+        self.registers = [0x0]*0xf # V1,V2 ~ V9,Va,Vb,~ Vf までの16個。原則16進数をindexとしてアクセスする
+        self.pc = 0x0
+        self.sp = 0x0 # スタックポインタ 8bit
+        self.dt = 0x0
+        self.st = 0x0
+        self.i = 0x0
+        self.stacks = [0x0]*16
+        self.font_address = 0x0
+        self._load_font(self._font_address)
+
+    def _load_font(self, font_address):
+        for i in range(len(Emulator._fonts)):
+            self.memory[font_address+i] = Environment._fonts[i]
+
+class Emulator :
+
     def __init__(self, rom):
         self._load_rom(rom)
-        self._memory = [0x0]*4096
-        self._video_memory = [[0] * 64 for i in range(32)]
-        self._registers = [0x0]*0xf # V1,V2 ~ V9,Va,Vb,~ Vf までの16個。原則16進数をindexとしてアクセスする
-        self._pc = 0x0
-        self._sp = 0x0 # スタックポインタ 8bit
-        self._dt = 0x0
-        self._st = 0x0
-        self._i = 0x0
-        self._stacks = [0x0]*16
-        self._font_address = 0x0
+        self._env = Environment()
         self._instructions = self._init_instructions()
-        self._load_font(self._font_address)
         hz = threading.Thread(target=self._pulse_60hz)
         hz.start()
 
     def _pulse_60hz(self):
         t = threading.Timer(1/60, self._pulse_60hz)
         t.start()
-        if self._dt<0 : self._dt-=1
-        if self._st<0 : self._st-=1
-
-    def _load_font(self, font_address):
-        for i in range(len(Emulator._fonts)):
-            self._memory[font_address+i] = Emulator._fonts[i]
+        if self._env.dt<0 : self._env.dt-=1
+        if self._env.st<0 : self._env.st-=1
 
     def _init_instructions(self):
         instructions = []

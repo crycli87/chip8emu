@@ -30,6 +30,7 @@ class Emulator :
         self._i = 0x0
         self._stacks = [0x0]*16
         self._font_address = 0x0
+        self._instructions = self._init_instructions()
         self._load_font(self._font_address)
         hz = threading.Thread(target=self._pulse_60hz)
         hz.start()
@@ -44,13 +45,62 @@ class Emulator :
         for i in range(len(Emulator._fonts)):
             self._memory[font_address+i] = Emulator._fonts[i]
 
+    def _init_instructions(self):
+        instructions = []
+        instructions[0x00E0] = self._cls
+        instructions[0x00EE] = self._ret
+        for i in range(0xfff+1):
+            instructions[0x1000+i] = self._jp_addr
+        for i in range(0xfff+1):
+            instructions[0x2000+i] = self._call_addr
+        for i in range(0xfff+1):
+            instructions[0x3000+i] = self._se_vx_byte
+        for i in range(0xfff+1):
+            instructions[0x4000+i] = self._sne_vx_byte
+        for i in range(0xfff+1):
+            instructions[0x7000+i] = self._add_vx_byte
+        for i in range(0xfff+1):
+            instructions[0x8000+i] = self._calc_vx_vy
+        for i in range(0xff+1):
+            instructions[0x9000+(i<<4)] = self._sne_vx_vy
+        for i in range(0xfff+1):
+            instructions[0xa000+i] = self._ld_i_addr
+        for i in range(0xfff+1):
+            instructions[0xb000+i] = self._jp_v0_addr
+        for i in range(0xfff+1):
+            instructions[0xc000+i] = self._rnd_vx_byte
+        for i in range(0xfff+1):
+            instructions[0xd000+i] = self._drw_vx_vy_nibble
+        for i in range(0xf+1):
+            instructions[0xe09e+(i<<8)] = self._skp_vx
+        for i in range(0xf+1):
+            instructions[0xe0a1+(i<<8)] = self._sknp_vx
+        for i in range(0xf+1):
+            instructions[0xf007+(i<<8)] = self._ld_vx_dt
+        for i in range(0xf+1):
+            instructions[0xf00a+(i<<8)] = self._ld_vx_k
+        for i in range(0xf+1):
+            instructions[0xf015+(i<<8)] = self._ld_dt_vx
+        for i in range(0xf+1):
+            instructions[0xf018+(i<<8)] = self._ld_st_vx
+        for i in range(0xf+1):
+            instructions[0xf01e+(i<<8)] = self._add_i_vx
+        for i in range(0xf+1):
+            instructions[0xf029+(i<<8)] = self._ld_f_vx
+        for i in range(0xf+1):
+            instructions[0xf033+(i<<8)] = self._ld_b_vx
+        for i in range(0xf+1):
+            instructions[0xf055+(i<<8)] = self._ld_refI_vx
+        for i in range(0xf+1):
+            instructions[0xf065+(i<<8)] = self._ld_vx_refI
+
     def _load_rom(self,rom):
         None
 
     def run(self):
         curses.wrapper(self._run)
     def _run(self, screen):
-        while True:
+        while True: #TODO: デバッグ用に1tickずつ実行できるように
             self.tick()
             self._update_screen(screen)
     
@@ -59,6 +109,7 @@ class Emulator :
         screen.refresh()
     
     def tick(self):
-        
+        op = self._get_op()
+
 
 

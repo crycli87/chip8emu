@@ -231,6 +231,8 @@ class Emulator :
     def _run(self, screen):
         while True: #TODO: デバッグ用に1tickずつ実行できるように
             n = self.tick()
+            if n == -1:
+                screen.getkey()
             self._update_screen(screen)
     
     def _update_screen(self, screen):
@@ -238,10 +240,10 @@ class Emulator :
         for y in range(len(self._env.video_memory)):
             row = ""
             for x in range(len(self._env.video_memory[y])):
-                if x == 0 :
-                    row += "   "
+                if self._env.video_memory[y][x] == 0 :
+                    row += "  "
                 else :
-                    row += "■ "
+                    row += "XX"
             screen.addstr(y,0,row)
         screen.refresh()
     

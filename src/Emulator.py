@@ -1,6 +1,7 @@
 import threading
 import curses
 
+
 class Environment :
     _fonts =    [0xF0,0x90,0x90,0x90,0xF0,
                  0x20,0x60,0x20,0x20,0x70,
@@ -119,34 +120,49 @@ class Emulator :
         raise NotImplementedError()
 
     def _se_vx_byte(self):  # 3xkk
-        raise NotImplementedError()
+        (_,x,k1,k2) = self._get_nibbles()
+        kk = Emulator._join_nibbles(k1,k2)
+        if self._env.registers[x] == kk :
+            self._env.pc += 2
     
-    def _sne_vx_byte(self):  #4 xkk
+    def _sne_vx_byte(self):  #4xkk
         raise NotImplementedError()
     
     def _se_vx_vy(self):  # 5xy0
         raise NotImplementedError()
 
     def _ld_vx_byte(self): # 6xkk
-        raise NotImplementedError()
+        (_,x,k1,k2) = self._get_nibbles()
+        kk = Emulator._join_nibbles(k1,k2)
+        self._env.registers[x] = kk
 
     def _add_vx_byte(self): # 7xkk
-        raise NotImplementedError()
+        (_,x,k1,k2) = self._get_nibbles()
+        kk = Emulator._join_nibbles(k1,k2)
+        self._env.registers[x] += kk
 
-    def _calc_vx_vy(self): # 8xy0
-        raise NotImplementedError()
+    def _calc_vx_vy(self): # 8xyp
+        (_,x,y,op) = self._get_nibbles()
+        if op == 0: # ld vx, vy
+            self._env.registers[x] = self._env.registers[y]
 
     def _sne_vx_vy(self): # 9xy0
         raise NotImplementedError()
 
     def _ld_i_addr(self): # Annn
-        raise NotImplementedError()
+        (_,n1,n2,n3) = self._get_nibbles()
+        nnn = Emulator._join_nibbles(n1,n2,n3)
+        self._env.i = nnn
 
     def _jp_v0_addr(self): # Bnnn
         raise NotImplementedError()
 
     def _rnd_vx_byte(self): # Cxkk
-        raise NotImplementedError()
+        import random
+        (_,x,k1,k2) = self._get_nibbles()
+        kk = Emulator._join_nibbles(k1,k2)
+        rnd = random.randint(0,255)
+        self._env.registers[x] = (rnd&kk)
 
     def _skp_vx(self): # Ex9E
         raise NotImplementedError()
@@ -190,7 +206,9 @@ class Emulator :
         self._env.i = self._env.font_address+(self._env.registers[x]*5)
 
     def _drw_vx_vy_nibble(self): #Dxyn
-        (_,x,y,n) = self._get_nibbles()
+        (_,vx,vy,n) = self._get_nibbles()
+        vx = self._env.registers[vx]
+        vy = self._env.registers[vy]
         sprite = []
         for i in range(n):
             sprite.append(self._env.memory[self._env.i+i])
@@ -200,7 +218,14 @@ class Emulator :
             sprite[i] = bitarr
         for yy in range(len(sprite)):
             for xx in range(len(sprite[yy])):
-                self._env.video_memory[y+yy][x+xx] ^= sprite[yy][xx]
+                x = vx+xx
+                y = vy+yy
+                if x >= len(self._env.video_memory[y]): #スプライトの一部が画面からはみ出る場合、逆方向に折り返す
+                    y += 1
+                    x -= 32
+                if y >= len(self._env.video_memory): #縦方向にはみ出る場合の仕様がよくわからない とりあえず何もしないでおく
+                    continue
+                self._env.video_memory[y][x] ^= sprite[yy][xx]
 
     def _byte_to_bitarr(byte):
         bitarr = []
@@ -218,7 +243,7 @@ class Emulator :
 
     def _jp_addr(self): #1nnn
         (_,n1,n2,n3) = self._get_nibbles()
-        nnn = self._join_nibbles(n1,n2,n3)
+        nnn = Emulator._join_nibbles(n1,n2,n3)
         self._env.pc = nnn
 
     def _load_rom(self,rom):
@@ -241,10 +266,14 @@ class Emulator :
             row = ""
             for x in range(len(self._env.video_memory[y])):
                 if self._env.video_memory[y][x] == 0 :
-                    row += "  "
+                    row += " ."
                 else :
-                    row += "XX"
+                    row += "##"
             screen.addstr(y,0,row)
+        def _show_env():
+            #TODO
+            None
+        _show_env()
         screen.refresh()
     
     def tick(self):

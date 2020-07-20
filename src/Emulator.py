@@ -1,6 +1,6 @@
 import threading
 import curses
-
+import sys
 
 class Environment :
     _fonts =    [0xF0,0x90,0x90,0x90,0xF0,
@@ -39,9 +39,15 @@ class Environment :
 
 class Emulator :
     def __init__(self, rom):
+        self._key = -1 # 入力されてるキーのASCIIコード 同時入力非対応
         self._env = Environment()
         self._load_rom(rom)
         self._instructions = self._init_instructions()
+
+    def _get_input(self):
+        t = threading.Thread(target=self._get_input)
+        self._key = sys.stdin.read(1)
+        t.start()
 
     def _pulse_60hz(self):
         t = threading.Timer(1/60, self._pulse_60hz)
@@ -252,6 +258,8 @@ class Emulator :
     def run(self):
         hz = threading.Thread(target=self._pulse_60hz)
         hz.start()
+        getinput = threading.Thread(target=self._get_input)
+        getinput.start()
         curses.wrapper(self._run)
     def _run(self, screen):
         while True: #TODO: デバッグ用に1tickずつ実行できるように
@@ -274,6 +282,7 @@ class Emulator :
             #TODO
             None
         _show_env()
+        screen.addstr(0,64*2+2,str(self._key))
         screen.refresh()
     
     def tick(self):

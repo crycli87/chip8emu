@@ -42,8 +42,6 @@ class Emulator :
         self._env = Environment()
         self._load_rom(rom)
         self._instructions = self._init_instructions()
-        hz = threading.Thread(target=self._pulse_60hz)
-        hz.start()
 
     def _pulse_60hz(self):
         t = threading.Timer(1/60, self._pulse_60hz)
@@ -252,6 +250,8 @@ class Emulator :
             self._env.memory[i+0x200] = byte
 
     def run(self):
+        hz = threading.Thread(target=self._pulse_60hz)
+        hz.start()
         curses.wrapper(self._run)
     def _run(self, screen):
         while True: #TODO: デバッグ用に1tickずつ実行できるように

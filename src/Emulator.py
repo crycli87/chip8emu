@@ -1,6 +1,6 @@
 import threading
 import curses
-import sys
+from enum import IntEnum
 
 class Environment :
     _fonts =    [0xF0,0x90,0x90,0x90,0xF0,
@@ -38,16 +38,41 @@ class Environment :
             self.memory[font_address+i] = Environment._fonts[i]
 
 class Emulator :
+    class Key(IntEnum):
+        N1=49   # 1234   123C
+        N2=50   # qwer = 456D
+        N3=51   # asdf   789E
+        N4=81   # zxdv   A0BF
+        N5=87
+        N6=69
+        N7=65
+        N8=83
+        N9=68
+        N0=88
+        A=90
+        B=67
+        C=52
+        D=82
+        E=70
+        F=86
+
     def __init__(self, rom):
-        self._key = -1 # 入力されてるキーのASCIIコード 同時入力非対応
+        self._key = {} # 入力されてるキーコードとその入力状態のbool値の辞書
+        self._init_key()
         self._env = Environment()
         self._load_rom(rom)
         self._instructions = self._init_instructions()
+    def _init_key(self):
+        for k in self.Key:
+            self._key[k] = False
 
     def _get_input(self):
-        t = threading.Thread(target=self._get_input)
-        self._key = sys.stdin.read(1)
-        t.start()
+        import ctypes
+        def is_press(keycode):
+            return (bool(ctypes.windll.user32.GetAsyncKeyState(keycode)&0x8000))
+        while True:
+            for k in self.Key:
+                self._key[k] = is_press(k)
 
     def _pulse_60hz(self):
         t = threading.Timer(1/60, self._pulse_60hz)
@@ -282,7 +307,6 @@ class Emulator :
             #TODO
             None
         _show_env()
-        screen.addstr(0,64*2+2,str(self._key))
         screen.refresh()
     
     def tick(self):

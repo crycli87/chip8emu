@@ -293,20 +293,23 @@ class Emulator :
                 screen.getkey()
             self._update_screen(screen)
     
-    def _update_screen(self, screen):
+    def _update_screen(self, screen): #TODO: 画面表示周りは別クラスにくくりだし
         screen.clear()
-        for y in range(len(self._env.video_memory)):
-            row = ""
-            for x in range(len(self._env.video_memory[y])):
-                if self._env.video_memory[y][x] == 0 :
-                    row += " ."
-                else :
-                    row += "##"
-            screen.addstr(y,0,row)
-        def _show_env():
-            #TODO
-            None
-        _show_env()
+        try:
+            for y in range(len(self._env.video_memory)):
+                row = ""
+                for x in range(len(self._env.video_memory[y])):
+                    if self._env.video_memory[y][x] == 0 :
+                        row += " ."
+                    else :
+                        row += "##"
+                screen.addstr(y,0,row)
+            def _show_env():
+                #TODO
+                None
+            _show_env()
+        except curses.error:
+            pass
         screen.refresh()
     
     def tick(self):

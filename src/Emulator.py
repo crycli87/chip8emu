@@ -23,7 +23,7 @@ class Environment :
     def __init__(self) :
         self.memory = [0x0]*4096
         self.video_memory = [[0b0] * 64 for i in range(32)]
-        self.registers = [0x0]*0xf # V1,V2 ~ V9,Va,Vb,~ Vf までの16個。原則16進数をindexとしてアクセスする
+        self.registers = [0x0]*0x10 # V1,V2 ~ V9,Va,Vb,~ Vf までの16個。原則16進数をindexとしてアクセスする
         self.pc = 0x200
         self.sp = 0x0 # スタックポインタ 8bit
         self.dt = 0x0

@@ -330,6 +330,7 @@ class Emulator :
         getinput.start()
         curses.wrapper(self._run)
     def _run(self, screen):
+        curses.start_color()
         while True: #TODO: デバッグ用に1tickずつ実行できるように
             n = self.tick()
             if n == -1:
@@ -345,7 +346,7 @@ class Emulator :
                     if self._env.video_memory[y][x] == 0 :
                         row += " ."
                     else :
-                        row += "##"
+                        row += "▉▉"
                 screen.addstr(y,0,row)
             def _show_env():
                 registers = ""
@@ -357,7 +358,7 @@ class Emulator :
                 envs += "i:{:04x}      ".format(self._env.i)
                 envs += "pc:{:04x} ".format(self._env.pc)
                 envs += "sp:{:02x}  ".format(self._env.sp)
-                screen.addstr(34,0,envs)
+                screen.addstr(34,0,envs,)
             _show_env()
         except curses.error:
             pass

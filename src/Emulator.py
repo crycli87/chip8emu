@@ -164,7 +164,10 @@ class Emulator :
             self._env.pc += 2
     
     def _sne_vx_byte(self):  #4xkk
-        raise NotImplementedError()
+        (_,x,k1,k2) = self._get_nibbles()
+        kk = Emulator._join_nibbles(k1,k2)
+        if self._env.registers[x] != kk:
+            self._env.pc += 2
     
     def _se_vx_vy(self):  # 5xy0
         raise NotImplementedError()
@@ -183,6 +186,25 @@ class Emulator :
         (_,x,y,op) = self._get_nibbles()
         if op == 0: # ld vx, vy
             self._env.registers[x] = self._env.registers[y]
+        if op == 1: # or vx, vy
+            raise NotImplementedError()
+        if op == 2: # and vx, vy
+            (_,x,y,_) = self._get_nibbles()
+            self._env.registers[x] &= self._env.registers[y]
+        if op == 3: # xor vx, vy
+            raise NotImplementedError()
+        if op == 4: # add vx, vy
+            raise NotImplementedError()
+        if op == 5: # sub vx, vy
+            if self._env.registers[x] > self._env.registers[y]:
+                self._env.registers[0xf] = 1
+            self._env.registers[x] -= self._env.registers[y]
+        if op == 6: # shr vx{, vy}  vyは読み捨て
+            raise NotImplementedError()
+        if op == 7: # subn vx, vy
+            raise NotImplementedError()
+        if op == 0xe: # shl vx{, vy}  vyは読み捨て
+            raise NotImplementedError()
 
     def _sne_vx_vy(self): # 9xy0
         raise NotImplementedError()
@@ -232,7 +254,8 @@ class Emulator :
         raise NotImplementedError()
 
     def _add_i_vx(self): # Fx1E
-        raise NotImplementedError()
+        (_,x,_,_) = self._get_nibbles()
+        self._env.i = self._env.i+self._env.registers[x]
 
     def _ld_b_vx(self): # Fx33
         raise NotImplementedError()

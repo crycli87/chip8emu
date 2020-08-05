@@ -321,8 +321,16 @@ class Emulator :
                         row += "##"
                 screen.addstr(y,0,row)
             def _show_env():
-                #TODO
-                None
+                registers = ""
+                for i in range(len(self._env.registers)):
+                    registers += "V{:x}:{:02x} ".format(i,self._env.registers[i])
+                screen.addstr(33,0,registers)
+                envs = "dt:{:02x} ".format(self._env.dt)
+                envs += "st:{:02x}       ".format(self._env.st)
+                envs += "i:{:04x}      ".format(self._env.i)
+                envs += "pc:{:04x} ".format(self._env.pc)
+                envs += "sp:{:02x}  ".format(self._env.sp)
+                screen.addstr(34,0,envs)
             _show_env()
         except curses.error:
             pass

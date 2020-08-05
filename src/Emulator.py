@@ -151,7 +151,11 @@ class Emulator :
         return (n1,n2,n3,n4)
         
     def _call_addr(self): # 2nnn
-        raise NotImplementedError()
+        (_,n1,n2,n3) = self._get_nibbles()
+        nnn = Emulator._join_nibbles(n1,n2,n3)
+        self._env.stacks[self._env.sp] = self._env.pc+0x2
+        self._env.sp += 1
+        self._env.pc = nnn
 
     def _se_vx_byte(self):  # 3xkk
         (_,x,k1,k2) = self._get_nibbles()
@@ -243,8 +247,8 @@ class Emulator :
         self.env.video_memory = [[0] * 64 for i in range(32)]
 
     def _ret(self): #00EE
-        self.env.pc = self.env.stacks[self.env.sp]
-        self.env.sp -= 1
+        self._env.sp -= 1
+        self._env.pc = self._env.stacks[self._env.sp]
     
     def _ld_f_vx(self): #Fx29
         (_,x,_,_) = self._get_nibbles()

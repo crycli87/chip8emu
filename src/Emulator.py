@@ -170,7 +170,9 @@ class Emulator :
             self._env.pc += 2
     
     def _se_vx_vy(self):  # 5xy0
-        raise NotImplementedError()
+        (_,x,y,_) = self._get_nibbles()
+        if self._env.registers[x] == self._env.registers[y]:
+            self._env.pc += 2
 
     def _ld_vx_byte(self): # 6xkk
         (_,x,k1,k2) = self._get_nibbles()
@@ -181,33 +183,53 @@ class Emulator :
         (_,x,k1,k2) = self._get_nibbles()
         kk = Emulator._join_nibbles(k1,k2)
         self._env.registers[x] += kk
+        is_overflow = (self._env.registers[x]>0xff)
+        if is_overflow: 
+                self._env.registers[x] -= 0xf
 
     def _calc_vx_vy(self): # 8xyp
         (_,x,y,op) = self._get_nibbles()
         if op == 0: # ld vx, vy
             self._env.registers[x] = self._env.registers[y]
         if op == 1: # or vx, vy
-            raise NotImplementedError()
+            self._env.registers[x] |= self._env.registers[y]
         if op == 2: # and vx, vy
-            (_,x,y,_) = self._get_nibbles()
             self._env.registers[x] &= self._env.registers[y]
         if op == 3: # xor vx, vy
-            raise NotImplementedError()
+            self._env.registers[x] ^= self._env.registers[y]
         if op == 4: # add vx, vy
-            raise NotImplementedError()
+            self._env.registers[x] += self._env.registers[y]
+            is_overflow = (self._env.registers[x]>0xff)
+            if is_overflow: 
+                self._env.registers[0xf] = 1
+                self._env.registers[x] -= 0xff
+            else:
+                self._env.registers[0xf] = 0
         if op == 5: # sub vx, vy
             if self._env.registers[x] > self._env.registers[y]:
                 self._env.registers[0xf] = 1
             self._env.registers[x] -= self._env.registers[y]
+            is_overflow = (self._env.registers[x]<0)
+            if is_overflow: 
+                self._env.registers[0xf] = 1
+                self._env.registers[x] += 0xff
+            else:
+                self._env.registers[0xf] = 0
         if op == 6: # shr vx{, vy}  vyは読み捨て
-            raise NotImplementedError()
+            self._env.registers[0xf] = (self._env.registers[x]&0b00000001)
+            self._env.registers[x] = self._env.registers[x]>>1
         if op == 7: # subn vx, vy
-            raise NotImplementedError()
+            if self._env.registers[x] < self._env.registers[y]:
+                self._env.registers[0xf] = 1
+            self._env.registers[x] = self._env.registers[y]-self._env.registers[x]
         if op == 0xe: # shl vx{, vy}  vyは読み捨て
-            raise NotImplementedError()
+            self._env.registers[0xf] = ((self._env.registers[x]&0b10000000)>>7)
+            self._env.registers[x] = self._env.registers[x]<<1
 
     def _sne_vx_vy(self): # 9xy0
-        raise NotImplementedError()
+        (_,x,y,_) = self._get_nibbles()
+        if self._env.registers[x] != self._env.registers[y]:
+            self._env.pc += 2
 
     def _ld_i_addr(self): # Annn
         (_,n1,n2,n3) = self._get_nibbles()
@@ -258,13 +280,20 @@ class Emulator :
         self._env.i = self._env.i+self._env.registers[x]
 
     def _ld_b_vx(self): # Fx33
-        raise NotImplementedError()
+        (_,x,_,_) = self._get_nibbles()
+        x = self._env.registers[x]
+        for i in range(3):
+            self._env.memory[self._env.i+i] = (x&(0b00000100>>i))>>(2-i)
 
     def _ld_refI_vx(self): # Fx55
-        raise NotImplementedError()
+        (_,x,_,_) = self._get_nibbles()
+        for i in range(x):
+            self._env.memory[self._env.i+i] = self._env.registers[i]
 
     def _ld_vx_refI(self): # Fx65
-        raise NotImplementedError()
+        (_,x,_,_) = self._get_nibbles()
+        for i in range(x):
+            self._env.registers[i] = self._env.memory[self._env.i+i]
 
     def _cls(self): #00E0
         self.env.video_memory = [[0] * 64 for i in range(32)]

@@ -1,6 +1,7 @@
 import threading
 import curses
 from enum import IntEnum
+import math
 
 class Environment :
     _fonts =    [0xF0,0x90,0x90,0x90,0xF0,
@@ -185,7 +186,7 @@ class Emulator :
         self._env.registers[x] += kk
         is_overflow = (self._env.registers[x]>0xff)
         if is_overflow: 
-                self._env.registers[x] -= 0xf
+                self._env.registers[x] -= 0x100
 
     def _calc_vx_vy(self): # 8xyp
         (_,x,y,op) = self._get_nibbles()
@@ -202,7 +203,7 @@ class Emulator :
             is_overflow = (self._env.registers[x]>0xff)
             if is_overflow: 
                 self._env.registers[0xf] = 1
-                self._env.registers[x] -= 0xff
+                self._env.registers[x] -= 0x100
             else:
                 self._env.registers[0xf] = 0
         if op == 5: # sub vx, vy
@@ -212,7 +213,7 @@ class Emulator :
             is_overflow = (self._env.registers[x]<0)
             if is_overflow: 
                 self._env.registers[0xf] = 1
-                self._env.registers[x] += 0xff
+                self._env.registers[x] += 0x100
             else:
                 self._env.registers[0xf] = 0
         if op == 6: # shr vx{, vy}  vyは読み捨て
@@ -225,6 +226,12 @@ class Emulator :
         if op == 0xe: # shl vx{, vy}  vyは読み捨て
             self._env.registers[0xf] = ((self._env.registers[x]&0b10000000)>>7)
             self._env.registers[x] = self._env.registers[x]<<1
+            is_overflow = (self._env.registers[x]>0xff)
+            if is_overflow: 
+                self._env.registers[0xf] = 1
+                self._env.registers[x] -= 0x100
+            else:
+                self._env.registers[0xf] = 0
 
     def _sne_vx_vy(self): # 9xy0
         (_,x,y,_) = self._get_nibbles()
@@ -282,17 +289,18 @@ class Emulator :
     def _ld_b_vx(self): # Fx33
         (_,x,_,_) = self._get_nibbles()
         x = self._env.registers[x]
-        for i in range(3):
-            self._env.memory[self._env.i+i] = (x&(0b00000100>>i))>>(2-i)
+        for i in range(2,-1,-1):
+            self._env.memory[self._env.i+i] = x%10
+            x = math.floor(x/10)
 
     def _ld_refI_vx(self): # Fx55
         (_,x,_,_) = self._get_nibbles()
-        for i in range(x):
+        for i in range(x+1):
             self._env.memory[self._env.i+i] = self._env.registers[i]
 
     def _ld_vx_refI(self): # Fx65
         (_,x,_,_) = self._get_nibbles()
-        for i in range(x):
+        for i in range(x+1):
             self._env.registers[i] = self._env.memory[self._env.i+i]
 
     def _cls(self): #00E0
